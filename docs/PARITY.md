@@ -1,4 +1,4 @@
-# Implementation coverage — 0.9.1
+# Implementation coverage — 0.9.2
 
 Behavioral reference: [Design Mode documentation](https://docs.jakeinmotion.com/design-mode/), reviewed November 16, 2026. [The full directory](DOCUMENTATION-DIRECTORY.md) indexes all 22 product pages and 4 support pages.
 
@@ -43,4 +43,4 @@ The features below are implemented. Browser checks exercise the local editor; na
 
 ## Validation
 
-70 automated tests pass: 26 model/native-contract tests and 44 browser tests. All frontend files pass ES2020 parsing; all host files pass ES3 parsing. See [VALIDATION.md](VALIDATION.md) and the [Mac acceptance checklist](MAC-AE-VALIDATION.md).
+72 automated tests pass: 26 model/native-contract tests, 2 package-integrity tests and 44 browser tests. All frontend files pass ES2020 parsing; all host files pass ES3 parsing. See [VALIDATION.md](VALIDATION.md) and the [Mac acceptance checklist](MAC-AE-VALIDATION.md).

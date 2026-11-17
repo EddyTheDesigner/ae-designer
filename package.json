@@ -1,13 +1,14 @@
 {
   "name": "ae-designer",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "description": "Local vector design tools for Adobe After Effects",
   "scripts": {
-    "test": "node --test tests/model.test.cjs tests/host.test.cjs",
+    "test": "node --test tests/model.test.cjs tests/host.test.cjs tests/package.test.cjs",
     "check": "node scripts/check.cjs",
     "build": "node scripts/build.cjs",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "check:package": "node scripts/verify-package.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

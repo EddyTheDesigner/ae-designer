@@ -1,6 +1,6 @@
 # Validation record
 
-AE Designer 0.9.1 · November 16, 2026
+AE Designer 0.9.2 · November 16, 2026
 
 | Check | Result |
 | --- | --- |
@@ -8,6 +8,7 @@ AE Designer 0.9.1 · November 16, 2026
 | Host scripts parse at ECMAScript 3 | Pass: 3 modules |
 | Manifest paths and Mac LF endings | Pass |
 | Model/history and mocked AE contracts | 26 passed |
+| Package-content regression tests | 2 passed |
 | Chromium editor interactions | 44 passed, no skipped/flaky tests |
 | UI review | Wide and narrow layouts checked; public reference proportions reviewed |
 | ZXP signature | Adobe ZXPSignCmd verification performed for the release package |
@@ -30,4 +31,4 @@ Run checks with:
 
 Real-host steps are in [MAC-AE-VALIDATION.md](MAC-AE-VALIDATION.md). Implementation details and remaining fidelity boundaries are in [PARITY.md](PARITY.md).
 
-The 0.9.1 regressions cover native XY-only projection APIs, planar camera calibration, mirrored/nonuniform 3D parents, 3D split placement, ungroup paint/operator retention, duplicated transform animation, and text-outline success/failure cleanup.
+The 0.9.2 regressions cover native XY-only projection APIs, planar camera calibration, mirrored/nonuniform 3D parents, 3D split placement, ungroup paint/operator retention, duplicated transform animation, and text-outline success/failure cleanup.

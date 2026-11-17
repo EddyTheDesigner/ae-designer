@@ -1,6 +1,6 @@
 # Mac / After Effects acceptance checks
 
-Version 0.9.1 has passed local browser and mocked-host checks. These real-host checks remain outstanding because AE and macOS were unavailable during development. Use a copy of a project for the first run.
+Version 0.9.2 has passed local browser and mocked-host checks. These real-host checks remain outstanding because AE and macOS were unavailable during development. Use a copy of a project for the first run.
 
 ## Launch and workspace
 
@@ -60,7 +60,7 @@ Version 0.9.1 has passed local browser and mocked-host checks. These real-host c
 
 For issues, provide exact steps, expected versus actual result, AE/macOS versions and the complete push-note text. A small AEP reproducing a host failure is useful. Submit through the footer's feedback link or [GitHub Issues](https://github.com/EddyTheDesigner/ae-designer/issues).
 
-## 0.9.1 targeted checks
+## 0.9.2 targeted checks
 
 - Pull a 3D shape with a rotated, nonuniformly scaled or mirrored parent. Push as new and compare all four corners in the source camera.
 - Split a nested group from a 3D layer and compare placement, opacity, parent assignment and transform keyframes.

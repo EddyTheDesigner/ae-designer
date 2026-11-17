@@ -36,11 +36,13 @@ Gradient colors use an MIT native-data codec, saved AEP readback, and generated 
 Obtain [Adobe ZXPSignCmd](https://github.com/Adobe-CEP/CEP-Resources/tree/master/ZXPSignCMD) for the build computer. Keep certificates outside extension/ and version control. Generate a personal development certificate, then sign:
 
     ZXPSignCmd -selfSignedCert US Illinois "Personal Development" "AE Designer Development" YOUR_PASSWORD /private/path/development.p12
-    ZXPSignCmd -sign extension dist/AE-Designer.zxp /private/path/development.p12 YOUR_PASSWORD
-    ZXPSignCmd -verify dist/AE-Designer.zxp
-    npm run build
+    ZXPSignCmd -sign extension dist/AE-Designer-fresh.zxp /private/path/development.p12 YOUR_PASSWORD
+    ZXPSignCmd -verify dist/AE-Designer-fresh.zxp
+    node scripts/verify-package.cjs dist/AE-Designer-fresh.zxp
+    cp dist/AE-Designer-fresh.zxp dist/AE-Designer.zxp
+    npm run build -- --require-zxp
 
-The Mac ZIP includes the signed ZXP when one exists, source, docs, and a fallback installer. The installer has LF endings and ZIP executable mode 0755. Panel HTML should be synchronized with npm run build before signing; a subsequent build packages the signed file.
+The Mac ZIP includes the signed ZXP when one exists, source, docs, and a fallback installer. The installer has LF endings and ZIP executable mode 0755. Before signing, synchronize panel HTML with npm run build -- --source-only. Always sign to an unused output filename: ZXPSignCmd can report success while retaining an existing output file. Verify both the signature and the contents before replacing the final ZXP. A release build refuses a signed file that differs from current source.
 
 ## References
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2 — November 16, 2026
+
+Includes the 0.9.1 native-transfer corrections below, with rebuilt installation artifacts. The release build now compares every signed ZXP file with the current extension source and rejects stale or missing content. Two packaging regressions bring the test total to 72. The incorrect 0.9.1 download was withdrawn before the handoff.
+
 ## 0.9.1 — November 16, 2026
 
 - Preserve 3D shape planes when Push as new removes rotated, mirrored or nonuniformly scaled parents.

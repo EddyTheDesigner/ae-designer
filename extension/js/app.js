@@ -1610,7 +1610,7 @@
       }
       if (name === 'whats-new') {
         this.UI.dialog(
-          'What’s New · 0.9.1',
+          'What’s New · 0.9.2',
           'This update fixes 3D parent transforms and split layers, planar projection fallback, ungroup paint handling, duplicated transform animation, and text outlining at the original pull time. It also cleans up partial output after a failed text conversion.',
           [{ label: 'Done', primary: true }],
         );
@@ -1618,8 +1618,8 @@
       }
       if (name === 'about') {
         this.UI.dialog(
-          'AE Designer 0.9.1',
-          'An independent vector editor for After Effects, built from public Design Mode documentation. Version 0.9.1 is ready for Mac/AE acceptance testing. See the repository for source, instructions, and validation results.',
+          'AE Designer 0.9.2',
+          'An independent vector editor for After Effects, built from public Design Mode documentation. Version 0.9.2 is ready for Mac/AE acceptance testing. See the repository for source, instructions, and validation results.',
           [{ label: 'Done', primary: true }],
         );
         return;
