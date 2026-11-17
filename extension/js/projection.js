@@ -179,11 +179,42 @@
     m.inverted = () => matrix(inv3(m.homography) || [1, 0, 0, 0, 1, 0, 0, 0, 1]);
     return m;
   }
+  function cameraFromPlane(n, oldInverse) {
+    if (!oldInverse) return null;
+    const h = plane(n.projection.samples);
+    if (!h) return null;
+    let center = n.projection.cameraCenter;
+    if (!center && n.projection.cameraTransforms?.length) {
+      let world = identity();
+      for (const t of n.projection.cameraTransforms) world = multiply(world, transform(t));
+      center = [world[3], world[7], world[11]];
+    }
+    if (!center) return null;
+    const c = Array.from(
+      { length: 3 },
+      (_, r) =>
+        oldInverse[r * 4] * center[0] +
+        oldInverse[r * 4 + 1] * center[1] +
+        oldInverse[r * 4 + 2] * center[2] +
+        oldInverse[r * 4 + 3],
+    );
+    if (Math.abs(c[2]) < 1e-8) return null;
+    const q = [];
+    for (let r = 0; r < 3; r++) {
+      const x = h[r * 3],
+        y = h[r * 3 + 1],
+        w = h[r * 3 + 2];
+      q.push(x, y, -(x * c[0] + y * c[1] + w) / c[2], w);
+    }
+    return q;
+  }
   function rootMatrix(doc, n) {
     if (!n.projection?.samples) return null;
     let h;
-    const projection = camera(n.projection.samples),
-      oldInverse = inverse(layerWorld(doc, n, true)),
+    const oldInverse = inverse(layerWorld(doc, n, true)),
+      projection =
+        (n.projection.samples.length >= 6 ? camera(n.projection.samples) : null) ||
+        cameraFromPlane(n, oldInverse),
       current = layerWorld(doc, n, false);
     if (projection && oldInverse) {
       const relative = multiply(oldInverse, current),
@@ -284,8 +315,37 @@
     delete n.transform.matrix;
     return true;
   }
+  function unparent(doc, n) {
+    const m = layerWorld(doc, n, false),
+      u = [m[0], m[4], m[8]],
+      v = [m[1], m[5], m[9]],
+      sx = Math.hypot(...u);
+    if (sx < 1e-9) return null;
+    for (let i = 0; i < 3; i++) u[i] /= sx;
+    const shear = u.reduce((s, x, i) => s + x * v[i], 0);
+    for (let i = 0; i < 3; i++) v[i] -= u[i] * shear;
+    const sy = Math.hypot(...v);
+    if (sy < 1e-9) return null;
+    for (let i = 0; i < 3; i++) v[i] /= sy;
+    const w = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]],
+      y = Math.asin(Math.max(-1, Math.min(1, -u[2]))),
+      gimbal = Math.abs(Math.cos(y)) < 1e-8;
+    const t = {
+      ...D.transform(),
+      position: [m[3], m[7], m[11]],
+      anchor: [0, 0, 0],
+      scale: [sx * 100, sy * 100, 100],
+      orientation: [0, 0, 0],
+      xRotation: ((gimbal ? 0 : Math.atan2(v[2], w[2])) * 180) / Math.PI,
+      yRotation: (y * 180) / Math.PI,
+      rotation: ((gimbal ? Math.atan2(-v[0], v[1]) : Math.atan2(u[1], u[0])) * 180) / Math.PI,
+      opacity: n.transform.opacity,
+    };
+    return { transform: t, residual: new P.Matrix(1, 0, shear / sx, 1, 0, 0) };
+  }
   g.Projection = {
     rootMatrix,
+    unparent,
     matrix,
     render,
     projectPath,

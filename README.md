@@ -4,7 +4,7 @@ A vector design workspace inside Adobe After Effects. Draw and edit on a local c
 
 AE Designer is an independent implementation of the workflows described in the [Design Mode documentation](https://docs.jakeinmotion.com/design-mode/). It is not affiliated with Jake In Motion or Adobe. The original extension's code, binary, branding, and artwork are not included.
 
-**Version 0.9.0 is ready for Mac/AE acceptance testing.** The documented editor tools are implemented, with 60 passing automated tests. After Effects and macOS were unavailable during development, so native execution and exact equivalence to the original remain unverified. See [implementation coverage](docs/PARITY.md) and [validation results](docs/VALIDATION.md).
+**Version 0.9.1 is ready for Mac/AE acceptance testing.** The documented editor tools are implemented, with 70 passing automated tests. After Effects and macOS were unavailable during development, so native execution and exact equivalence to the original remain unverified. See [implementation coverage](docs/PARITY.md) and [validation results](docs/VALIDATION.md).
 
 ## Install on Mac
 

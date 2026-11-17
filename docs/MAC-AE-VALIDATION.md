@@ -1,6 +1,6 @@
 # Mac / After Effects acceptance checks
 
-Version 0.9.0 has passed local browser and mocked-host checks. These real-host checks remain outstanding because AE and macOS were unavailable during development. Use a copy of a project for the first run.
+Version 0.9.1 has passed local browser and mocked-host checks. These real-host checks remain outstanding because AE and macOS were unavailable during development. Use a copy of a project for the first run.
 
 ## Launch and workspace
 
@@ -59,3 +59,11 @@ Version 0.9.0 has passed local browser and mocked-host checks. These real-host c
 - Cancel a large pull with Escape; previous canvas/history should return.
 
 For issues, provide exact steps, expected versus actual result, AE/macOS versions and the complete push-note text. A small AEP reproducing a host failure is useful. Submit through the footer's feedback link or [GitHub Issues](https://github.com/EddyTheDesigner/ae-designer/issues).
+
+## 0.9.1 targeted checks
+
+- Pull a 3D shape with a rotated, nonuniformly scaled or mirrored parent. Push as new and compare all four corners in the source camera.
+- Split a nested group from a 3D layer and compare placement, opacity, parent assignment and transform keyframes.
+- Duplicate an animated layer and an animated shape group. Existing transform keys should copy without an extra key at pull time.
+- Pull animated text at one frame, move the AE playhead, then outline. The outline should use the pulled frame and restore the playhead.
+- Ungroup a plain painted group, nested transformed groups and compound paths. Groups containing shared operators should remain intact with an explanatory notice.

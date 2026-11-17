@@ -181,33 +181,102 @@ var DMHost = (function () {
   }
   function previewLayer(l,t,n){try{var source=l.source;n.preview={width:l.width,height:l.height};if(source&&source.mainSource&&source.mainSource.color){n.preview.color=source.mainSource.color;return;}if(!source)return;var temp=null,c=source instanceof CompItem?source:null,file=new File(Folder.temp.fsName+'/dm-preview-'+session+'-'+l.id+'.png');try{if(!c){temp=app.project.items.addComp('__AE Designer preview__',Math.max(1,l.width),Math.max(1,l.height),1,Math.max(1,source.duration||1),30);temp.layers.add(source);c=temp;}c.saveFrameToPng(Math.max(0,(t-l.startTime)*100/(l.stretch||100)),file);for(var wait=0;wait<20&&!file.exists;wait++)$.sleep(25);if(file.exists)n.previewFile=file.fsName;}finally{if(temp)temp.remove();}}catch(e){n.previewError=e.toString();}}
   function readLayer(l, t) {
-    var n = make(l instanceof TextLayer ? 'text' : 'layer', l.name);
-    n.layerKind = l instanceof ShapeLayer ? 'shape' : l instanceof TextLayer ? 'text' : 'other';
-    n.source = { layerId: l.id, index: l.index };
-    n.visible = l.enabled;
-    n.locked = l.locked;
-    n.label = l.label;
-    n.threeD = l.threeDLayer;
-    n.parentId = l.parent ? l.parent.id : null;
-    if(l.parent)n.parentMatrix=DMNative.parentMatrix(l,t);
-    n.blendMode = Number(l.blendingMode);
-    readTransform(l.property('ADBE Transform Group'), n, t, true);
-    var parent=l.parent,has3D=n.threeD;n.parentTransforms3D=[];while(parent){var parentNode=make('layer',parent.name);readTransform(parent.property('ADBE Transform Group'),parentNode,t,true);n.parentTransforms3D.unshift(parentNode.transform);if(parent.threeDLayer)has3D=true;parent=parent.parent;}
-    if(has3D){var projectionComp=l.containingComp,previousTime=projectionComp?projectionComp.time:t;try{if(projectionComp)projectionComp.time=t;var samples=[],coordinates=[[0,0,0],[256,0,0],[0,256,0],[256,256,0],[0,0,256],[256,0,256],[0,256,256],[256,256,256]];for(var pi=0;pi<coordinates.length;pi++){var result=l.sourcePointToComp(coordinates[pi]);samples.push({local:coordinates[pi],comp:[result[0],result[1]]});}n.projection={transform:clone(n.transform),samples:samples};}catch(pe){n.projectionError=pe.toString();}finally{if(projectionComp)projectionComp.time=previousTime;}}
-    if (n.layerKind === 'shape')
-      n.children = readContents(l.property('ADBE Root Vectors Group'), t, ['ADBE Root Vectors Group'], l);
-    if (n.type === 'text') {
-      var tx = readText(l, t);
-      n.text = tx.value;
-      n.meta.text = tx.meta;
-    }
-    var masks = l.property('ADBE Mask Parade');
-    if (masks) for (var i = 1; i <= masks.numProperties; i++) n.children.push(readMask(masks.property(i), t, i));
-    if(n.layerKind==='other')previewLayer(l,t,n);
-    try{for(var blend in BlendingMode)if(BlendingMode[blend]===l.blendingMode)n.blendName=blend;}catch(ignore){}
-    DMRigs.read(l,n,t);
-    return n;
+  var n = make(l instanceof TextLayer ? 'text' : 'layer', l.name);
+  n.layerKind = l instanceof ShapeLayer ? 'shape' : l instanceof TextLayer ? 'text' : 'other';
+  n.source = { layerId: l.id, index: l.index };
+  n.visible = l.enabled;
+  n.locked = l.locked;
+  n.label = l.label;
+  n.threeD = l.threeDLayer;
+  n.parentId = l.parent ? l.parent.id : null;
+  if (l.parent) n.parentMatrix = DMNative.parentMatrix(l, t);
+  n.blendMode = Number(l.blendingMode);
+  readTransform(l.property('ADBE Transform Group'), n, t, true);
+  var parent = l.parent,
+    has3D = n.threeD;
+  n.parentTransforms3D = [];
+  while (parent) {
+    var parentNode = make('layer', parent.name);
+    readTransform(parent.property('ADBE Transform Group'), parentNode, t, true);
+    n.parentTransforms3D.unshift(parentNode.transform);
+    if (parent.threeDLayer) has3D = true;
+    parent = parent.parent;
   }
+  if (has3D) {
+    var projectionComp = l.containingComp,
+      previousTime = projectionComp ? projectionComp.time : t;
+    try {
+      if (projectionComp) projectionComp.time = t;
+      var samples = [],
+        coordinates = [
+          [0, 0, 0],
+          [256, 0, 0],
+          [0, 256, 0],
+          [256, 256, 0]
+        ],
+        volume = true;
+      for (var pi = 0; pi < coordinates.length; pi++) {
+        var xy = coordinates[pi],
+          result = l.sourcePointToComp([xy[0], xy[1]]);
+        samples.push({ local: xy, comp: [result[0], result[1]] });
+      }
+      for (pi = 0; pi < 4; pi++)
+        try {
+          var xyz = [coordinates[pi][0], coordinates[pi][1], 256],
+            depth = l.sourcePointToComp(xyz);
+          samples.push({ local: xyz, comp: [depth[0], depth[1]] });
+        } catch (depthError) {
+          volume = false;
+          break;
+        }
+      if (volume) {
+        var depthChanged = false;
+        for (pi = 0; pi < 4; pi++)
+          if (
+            Math.abs(samples[pi].comp[0] - samples[pi + 4].comp[0]) +
+              Math.abs(samples[pi].comp[1] - samples[pi + 4].comp[1]) >
+            0.00001
+          )
+            depthChanged = true;
+        volume = depthChanged;
+      }
+      if (!volume) samples = samples.slice(0, 4);
+      n.projection = { transform: clone(n.transform), samples: samples };
+      var camera = projectionComp ? projectionComp.activeCamera : null;
+      if (camera) {
+        var cameraChain = [],
+          cameraParent = camera;
+        while (cameraParent) {
+          var cameraNode = make('layer', cameraParent.name);
+          readTransform(cameraParent.property('ADBE Transform Group'), cameraNode, t, true);
+          cameraChain.unshift(cameraNode.transform);
+          cameraParent = cameraParent.parent;
+        }
+        n.projection.cameraTransforms = cameraChain;
+      }
+    } catch (pe) {
+      n.projectionError = pe.toString();
+    } finally {
+      if (projectionComp) projectionComp.time = previousTime;
+    }
+  }
+  if (n.layerKind === 'shape')
+    n.children = readContents(l.property('ADBE Root Vectors Group'), t, ['ADBE Root Vectors Group'], l);
+  if (n.type === 'text') {
+    var tx = readText(l, t);
+    n.text = tx.value;
+    n.meta.text = tx.meta;
+  }
+  var masks = l.property('ADBE Mask Parade');
+  if (masks)
+    for (var i = 1; i <= masks.numProperties; i++) n.children.push(readMask(masks.property(i), t, i));
+  if (n.layerKind === 'other') previewLayer(l, t, n);
+  try {
+    for (var blend in BlendingMode) if (BlendingMode[blend] === l.blendingMode) n.blendName = blend;
+  } catch (ignore) {}
+  DMRigs.read(l, n, t);
+  return n;
+}
   function pull(args) {
     var c = active(),
       layers = args.selected ? c.selectedLayers : null,
@@ -359,47 +428,119 @@ var DMHost = (function () {
     return true;
   }
   function eachNode(nodes,fn,parent) { for(var i=0;i<nodes.length;i++){fn(nodes[i],parent);eachNode(nodes[i].children||[],fn,nodes[i]);} }
-  function structuralContext(c,doc) {
-    var ctx={snapshots:{},originals:{},parents:{},desiredParents:{},desired:{}};
-    eachNode(doc.layers,function(n,p){ctx.desired[n.id]=n;ctx.desiredParents[n.id]=p?p.id:null;});
-    if(!baseline)return ctx;
-    for(var i=0;i<baseline.layers.length;i++){
-      var base=baseline.layers[i],layer=findLayer(c,base.source.layerId);
-      if(!layer)continue;
-      eachNode(base.children,function(n,p){ctx.originals[n.id]=n;ctx.parents[n.id]=p?p.id:base.id;
-        if(n.source&&n.source.path){var native=resolve(layer,n.source.path);if(!native||native.matchName!==n.matchName)throw Error(base.name+': the native Contents hierarchy changed. Pull again.');ctx.snapshots[n.id]=DMNative.capture(native);}
-      });
-    }
-    // Moving an unreadable custom gradient is refused before any source is removed.
-    eachNode(doc.layers,function(n){var old=ctx.originals[n.id];if(old&&ctx.parents[n.id]!==ctx.desiredParents[n.id])eachNode([n],function(x){if((x.type==='gradientFill'||x.type==='gradientStroke')&&!x.gradientPreset)throw Error(x.name+': its native gradient colors could not be read. Save the project and pull again before moving this group.');});});
-    return ctx;
+  function structuralContext(c, doc) {
+  var ctx = {
+    snapshots: {},
+    originals: {},
+    parents: {},
+    desiredParents: {},
+    desired: {},
+    layerTransforms: {},
+    layerBases: {}
+  };
+  eachNode(doc.layers, function (n, p) {
+    ctx.desired[n.id] = n;
+    ctx.desiredParents[n.id] = p ? p.id : null;
+  });
+  if (!baseline) return ctx;
+  for (var i = 0; i < baseline.layers.length; i++) {
+    var base = baseline.layers[i],
+      layer = findLayer(c, base.source.layerId);
+    if (!layer) continue;
+    ctx.layerBases[base.id] = base;
+    ctx.layerTransforms[base.id] = DMNative.capture(layer.property('ADBE Transform Group'));
+    eachNode(base.children, function (n, p) {
+      ctx.originals[n.id] = n;
+      ctx.parents[n.id] = p ? p.id : base.id;
+      if (n.source && n.source.path) {
+        var native = resolve(layer, n.source.path);
+        if (!native || native.matchName !== n.matchName)
+          throw Error(base.name + ': the native Contents hierarchy changed. Pull again.');
+        ctx.snapshots[n.id] = DMNative.capture(native);
+      }
+    });
   }
+  // Moving an unreadable custom gradient is refused before any source is removed.
+  eachNode(doc.layers, function (n) {
+    var old = ctx.originals[n.id] || ctx.originals[n.duplicateOf];
+    if (old && (n.duplicateOf || ctx.parents[n.id] !== ctx.desiredParents[n.id]))
+      eachNode([n], function (x) {
+        if ((x.type === 'gradientFill' || x.type === 'gradientStroke') && !x.gradientPreset)
+          throw Error(
+            x.name +
+              ': its native gradient colors could not be read. Save the project and pull again before moving this group.'
+          );
+      });
+  });
+  return ctx;
+}
   function topLayer(doc,id){for(var i=0;i<doc.layers.length;i++)if(doc.layers[i].id===id)return true;return false;}
   function shapeChildren(nodes) { var a=[];for(var i=0;i<nodes.length;i++)if(nodes[i].type!=='mask')a.push(nodes[i]);return a; }
-  function syncContents(layer,path,nodes,oldNodes,t,notes,ctx,forceGradients) {
-    var desired=shapeChildren(nodes), current=shapeChildren(oldNodes||[]), i,j,n,b,p,contents,idx;
-    for(i=0;i<desired.length;i++){
-      n=desired[i];b=ctx.originals[n.id]||null;idx=-1;
-      for(j=0;j<current.length;j++)if(current[j].id===n.id&&current[j].matchName===n.matchName){idx=j;break;}
-      contents=resolve(layer,path);
-      var created=idx<0;
-      if(idx<0){
-        p=contents.addProperty(n.matchName);
-        var snap=ctx.snapshots[n.id]||ctx.snapshots[n.duplicateOf];
-        if(snap&&snap.matchName===n.matchName&&(b||n.type!=='group'))DMNative.restore(p,snap);
-        idx=contents.numProperties-1;current.push(n);
+  function syncContents(layer, path, nodes, oldNodes, t, notes, ctx, forceGradients) {
+  var desired = shapeChildren(nodes),
+    current = shapeChildren(oldNodes || []),
+    i,
+    j,
+    n,
+    b,
+    p,
+    contents,
+    idx;
+  for (i = 0; i < desired.length; i++) {
+    n = desired[i];
+    b = ctx.originals[n.id] || ctx.originals[n.duplicateOf] || null;
+    idx = -1;
+    for (j = 0; j < current.length; j++)
+      if (current[j].id === n.id && current[j].matchName === n.matchName) {
+        idx = j;
+        break;
       }
-      if(idx!==i){contents.property(idx+1).moveTo(i+1);var moved=current.splice(idx,1)[0];current.splice(i,0,moved);}
-      p=resolve(layer,path).property(i+1);p.name=n.name;try{p.enabled=n.visible;}catch(e){}
-      applyProps(p,n,b,t,notes);
-      if(n.type==='group'){
-        applyTransform(p.property('ADBE Vector Transform Group'),n,b,t,false,notes);
-        syncContents(layer,path.concat([i+1,'ADBE Vectors Group']),n.children,b?b.children:[],t,notes,ctx,forceGradients||created);
-      }else applyGradient(layer,p,n,forceGradients||created?null:b,notes);
+    contents = resolve(layer, path);
+    var created = idx < 0;
+    if (idx < 0) {
+      p = contents.addProperty(n.matchName);
+      var snap = ctx.snapshots[n.id] || ctx.snapshots[n.duplicateOf];
+      if (snap && snap.matchName === n.matchName) {
+        if (n.type === 'group') {
+          for (var si = 0; si < (snap.children || []).length; si++) {
+            var part = snap.children[si];
+            if (part.matchName === 'ADBE Vectors Group') continue;
+            var target = p.property(part.matchName);
+            if (target) DMNative.restore(target, part);
+          }
+        } else DMNative.restore(p, snap);
+      }
+      idx = contents.numProperties - 1;
+      current.push(n);
     }
-    contents=resolve(layer,path);
-    for(i=current.length-1;i>=desired.length;i--)contents.property(i+1).remove();
+    if (idx !== i) {
+      contents.property(idx + 1).moveTo(i + 1);
+      var moved = current.splice(idx, 1)[0];
+      current.splice(i, 0, moved);
+    }
+    p = resolve(layer, path).property(i + 1);
+    p.name = n.name;
+    try {
+      p.enabled = n.visible;
+    } catch (e) {}
+    applyProps(p, n, b, t, notes);
+    if (n.type === 'group') {
+      applyTransform(p.property('ADBE Vector Transform Group'), n, b, t, false, notes);
+      syncContents(
+        layer,
+        path.concat([i + 1, 'ADBE Vectors Group']),
+        n.children,
+        !created && b ? b.children : [],
+        t,
+        notes,
+        ctx,
+        forceGradients || created
+      );
+    } else applyGradient(layer, p, n, forceGradients || created ? null : b, notes);
   }
+  contents = resolve(layer, path);
+  for (i = current.length - 1; i >= desired.length; i--) contents.property(i + 1).remove();
+}
   function preflight(c, doc, args) {
     if (!doc || doc.version !== 1 || !(doc.layers instanceof Array)) throw Error('Invalid document.');
     if (!args.asNew&&doc.source) {
@@ -426,7 +567,9 @@ var DMHost = (function () {
     if(!l){if(n.type==='text'){if(parseFloat(app.version)<24)throw Error('Text requires AE 2024 or newer.');l=n.text.boxText?c.layers.addBoxText(n.text.boxTextSize||[400,200],n.text.text):c.layers.addText(n.text.text);}else l=c.layers.addShape();created.push(l.id);layerMap[n.id]=l.id;}
     l.locked=false;l.name=n.name;l.enabled=n.visible;l.label=n.label||0;if(n.blendName&&typeof BlendingMode!=='undefined'&&BlendingMode[n.blendName]!==undefined)l.blendingMode=BlendingMode[n.blendName];else if(n.blendMode)l.blendingMode=n.blendMode;
     if(!b){l.threeDLayer=!!n.threeD;if(n.parentId&&!args.asNew){var par=findLayer(c,n.parentId);if(par)l.setParentWithJump(par);}}
-    applyTransform(l.property('ADBE Transform Group'),n,b,doc.time,true,notes);
+    var transformBase=b,transformSource=n.transformSource||n.duplicateOf;
+    if(!b&&!args.asNew&&ctx&&ctx.layerTransforms[transformSource]){DMNative.restore(l.property('ADBE Transform Group'),ctx.layerTransforms[transformSource]);transformBase=ctx.layerBases[transformSource];}
+    applyTransform(l.property('ADBE Transform Group'),n,transformBase,doc.time,true,notes);
     if(n.type==='text')applyText(l,n,b,doc.time,notes);else if(n.layerKind!=='other'){
       if(args.asNew)createContents(l.property('ADBE Root Vectors Group'),n.children,doc.time,notes,l,true);
       else if(structural)syncContents(l,['ADBE Root Vectors Group'],n.children,b?b.children:[],doc.time,notes,ctx);
@@ -459,7 +602,124 @@ var DMHost = (function () {
     doc.source.session = session;
     return { document: doc };
   }
-  function outlineText(args){var c=active(),n=args.node,original=n.source?findLayer(c,n.source.layerId):null,temp=null,shape=null,notes=[],selected=[],i;if(args.document.source&&args.document.source.compId!==c.id)throw Error('Activate the composition used for the pull.');for(i=1;i<=c.numLayers;i++){selected.push({id:c.layer(i).id,selected:c.layer(i).selected});c.layer(i).selected=false;}app.beginUndoGroup('AE Designer: Convert text to shapes');try{temp=original?original.duplicate():(n.text.boxText?c.layers.addBoxText(n.text.boxTextSize,n.text.text):c.layers.addText(n.text.text));temp.locked=false;temp.enabled=true;temp.name=n.name;applyText(temp,n,original?byId(baseline.layers,n.id):null,args.document.time,notes);applyTransform(temp.property('ADBE Transform Group'),n,null,args.document.time,true,notes);temp.selected=true;app.executeCommand(3781);for(i=0;i<c.selectedLayers.length;i++)if(c.selectedLayers[i] instanceof ShapeLayer){shape=c.selectedLayers[i];break;}if(!shape)throw Error('After Effects did not create shape outlines.');shape.name=n.name+' Outlines';temp.remove();temp=null;if(original)original.enabled=false;var model=readLayer(shape,args.document.time),source={project:projectPath(),dirty:app.project.dirty,compId:c.id,session:session,stack:stack(c)};if(!baseline){baseline=clone(args.document);baseline.layers=[];}for(i=baseline.layers.length-1;i>=0;i--)if(baseline.layers[i].id===n.id)baseline.layers.splice(i,1);baseline.layers.unshift(clone(model));baseline.source=clone(source);return {node:model,source:source,notes:notes};}finally{if(temp)try{temp.remove();}catch(ignore){}for(i=1;i<=c.numLayers;i++)c.layer(i).selected=false;for(i=0;i<selected.length;i++){var layer=findLayer(c,selected[i].id);if(layer)layer.selected=selected[i].selected;}app.endUndoGroup();}}
+  function outlineText(args) {
+  var c = active(),
+    n = args.node,
+    original = n.source ? findLayer(c, n.source.layerId) : null,
+    temp = null,
+    shape = null,
+    notes = [],
+    selected = [],
+    existing = {},
+    i,
+    previousTime = c.time,
+    success = false,
+    originalLocked = original ? original.locked : false,
+    originalEnabled = original ? original.enabled : false;
+  if (
+    args.document.source &&
+    (args.document.source.compId !== c.id || args.document.source.project !== projectPath())
+  )
+    throw Error('Activate the project and composition used for the pull.');
+  for (i = 1; i <= c.numLayers; i++) {
+    var item = c.layer(i);
+    selected.push({ id: item.id, selected: item.selected });
+    existing[item.id] = true;
+  }
+  app.beginUndoGroup('AE Designer: Convert text to shapes');
+  try {
+    c.time = args.document.time;
+    for (i = 1; i <= c.numLayers; i++)
+      try {
+        c.layer(i).selected = false;
+      } catch (selectionError) {}
+    temp = original
+      ? original.duplicate()
+      : n.text.boxText
+        ? c.layers.addBoxText(n.text.boxTextSize, n.text.text)
+        : c.layers.addText(n.text.text);
+    temp.locked = false;
+    temp.enabled = true;
+    temp.name = n.name;
+    var base = original && baseline ? byId(baseline.layers, n.id) : null;
+    applyText(temp, n, base, args.document.time, notes);
+    applyTransform(temp.property('ADBE Transform Group'), n, base, args.document.time, true, notes);
+    if (notes.length) throw Error(notes.join('\n'));
+    temp.selected = true;
+    app.executeCommand(3781);
+    for (i = 0; i < c.selectedLayers.length; i++)
+      if (
+        c.selectedLayers[i] instanceof ShapeLayer &&
+        !existing[c.selectedLayers[i].id] &&
+        c.selectedLayers[i].id !== temp.id
+      ) {
+        shape = c.selectedLayers[i];
+        break;
+      }
+    if (!shape) throw Error('After Effects did not create shape outlines.');
+    shape.name = n.name + ' Outlines';
+    temp.remove();
+    temp = null;
+    var model = readLayer(shape, args.document.time);
+    if (original) {
+      original.locked = false;
+      original.enabled = false;
+      original.locked = originalLocked;
+    }
+    var source = {
+      project: projectPath(),
+      dirty: app.project.dirty,
+      compId: c.id,
+      session: session,
+      stack: stack(c)
+    };
+    if (!baseline) {
+      baseline = clone(args.document);
+      baseline.layers = [];
+    }
+    for (i = baseline.layers.length - 1; i >= 0; i--)
+      if (baseline.layers[i].id === n.id) baseline.layers.splice(i, 1);
+    baseline.layers.unshift(clone(model));
+    baseline.source = clone(source);
+    success = true;
+    return { node: model, source: source, notes: notes };
+  } finally {
+    if (temp)
+      try {
+        temp.locked = false;
+        temp.remove();
+      } catch (ignore) {}
+    if (!success) {
+      for (i = c.numLayers; i >= 1; i--) {
+        var createdLayer = c.layer(i);
+        if (!existing[createdLayer.id])
+          try {
+            createdLayer.locked = false;
+            createdLayer.remove();
+          } catch (removeError) {}
+      }
+      if (original)
+        try {
+          original.locked = false;
+          original.enabled = originalEnabled;
+          original.locked = originalLocked;
+        } catch (restoreError) {}
+    }
+    c.time = previousTime;
+    for (i = 1; i <= c.numLayers; i++)
+      try {
+        c.layer(i).selected = false;
+      } catch (deselectError) {}
+    for (i = 0; i < selected.length; i++) {
+      var layer = findLayer(c, selected[i].id);
+      if (layer)
+        try {
+          layer.selected = selected[i].selected;
+        } catch (reselectError) {}
+    }
+    app.endUndoGroup();
+  }
+}
   function fonts() {
     var result = [];
     try {

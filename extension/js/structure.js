@@ -167,6 +167,39 @@
       styles = paintsFor(e.doc, n),
       layer = D.node('layer', n.name);
     layer.layerKind = 'shape';
+    const sourceLayer = layerOf(e.doc, n);
+    if (sourceLayer?.projection || sourceLayer?.threeD) {
+      [
+        'transform',
+        'threeD',
+        'parentId',
+        'parentMatrix',
+        'parentTransforms3D',
+        'projection',
+        'blendName',
+        'blendMode',
+        'label',
+        'visible',
+      ].forEach((k) => {
+        if (sourceLayer[k] !== undefined) layer[k] = D.clone(sourceLayer[k]);
+      });
+      layer.transformSource = sourceLayer.id;
+      let branch = n;
+      const ancestors = D.ancestors(e.doc, n.id).filter((x) => x !== sourceLayer);
+      for (const ancestor of ancestors) {
+        const wrapper = D.fresh(ancestor);
+        wrapper.name = ancestor.name;
+        wrapper.children = [
+          branch,
+          ...ancestor.children.filter((x) => paint(x) || x.type === 'operator').map(D.fresh),
+        ];
+        branch = wrapper;
+      }
+      layer.children = [branch, ...sourceLayer.children.filter(paint).map(D.fresh)];
+      D.remove(e.doc, n.id);
+      e.doc.layers.unshift(layer);
+      return layer;
+    }
     if (n.type === 'group' && safeFlatten(n) && !world.homography) {
       layer.children = n.children;
       G.storeMatrix(layer, world);
@@ -178,6 +211,11 @@
         ['fill', 'stroke'].forEach((kind) => {
           if (styles[kind]) layer.children.push(D.fresh(styles[kind]));
         });
+    }
+    if (sourceLayer) {
+      layer.transform.opacity *= sourceLayer.transform.opacity / 100;
+      layer.visible = sourceLayer.visible;
+      layer.blendName = sourceLayer.blendName;
     }
     D.remove(e.doc, n.id);
     e.doc.layers.unshift(layer);
@@ -273,45 +311,113 @@
     const selection = [];
     order(e.doc, e.selection).forEach((n) => {
       if (n.type !== 'group') return;
-      const parent = D.parent(e.doc, n.id),
-        index = parent.children.indexOf(n),
+      if (!unlocked(e.doc, n)) throw Error('Unlock the group first.');
+      if (n.array) Arrays.expand(n);
+      const parent = D.parent(e.doc, n.id);
+      if (!parent) return;
+      const index = parent.children.indexOf(n),
         paints = n.children.filter(paint),
-        contents = n.children.filter((x) => !paint(x)),
-        simple = contents.every(D.isShape) && !n.array && n.transform.opacity === 100;
-      if (simple) {
-        const wrapper = D.node('group', n.name);
-        wrapper.children = contents;
-        wrapper.children.push(...paints);
-        wrapper.transform = D.clone(n.transform);
-        if (paints.length) {
-          const same = paints.every((p) =>
+        contents = n.children.filter((x) => !paint(x));
+      if (contents.some((x) => x.type === 'operator')) {
+        selection.push(n.id);
+        e.notice('This group has shared operators. Its contents stay together to preserve the result.');
+        return;
+      }
+      const matrix = G.matrix(n),
+        moved = [],
+        simple =
+          matrix.isIdentity() &&
+          n.transform.opacity === 100 &&
+          n.visible !== false &&
+          (!n.props['ADBE Vector Blend Mode'] || n.props['ADBE Vector Blend Mode'] === 1);
+      const otherArt = parent.children.some((x) => x !== n && (D.isShape(x) || x.type === 'group'));
+      if (simple && !otherArt && !parent.children.some((x) => x.type === 'operator') && paints.length) {
+        // The paints can move with their paths because there is no sibling artwork to recolor.
+        const parentPaints = parent.children.filter(paint);
+        parentPaints.forEach((p) => {
+          const kind = p.type.toLowerCase().includes('stroke') ? 'stroke' : 'fill';
+          if (paints.some((x) => x.type.toLowerCase().includes(kind))) D.remove(e.doc, p.id);
+        });
+        const at = parent.children.indexOf(n);
+        parent.children.splice(at, 1, ...n.children);
+        selection.push(...contents.map((x) => x.id));
+        return;
+      }
+      const shapes = contents.filter(D.isShape),
+        clusters = [],
+        visited = new Set();
+      // Winding holes and intersecting contours must remain in one paint scope.
+      const linked = (a, b) => {
+        const p = G.pathOf(a),
+          q = G.pathOf(b);
+        p.transform(G.matrix(a));
+        q.transform(G.matrix(b));
+        return (
+          p.closed &&
+          q.closed &&
+          (p.intersects(q) || p.contains(q.firstSegment.point) || q.contains(p.firstSegment.point))
+        );
+      };
+      for (const shape of shapes) {
+        if (visited.has(shape.id)) continue;
+        const cluster = [shape];
+        visited.add(shape.id);
+        for (let i = 0; i < cluster.length; i++)
+          for (const other of shapes)
+            if (!visited.has(other.id) && linked(cluster[i], other)) {
+              visited.add(other.id);
+              cluster.push(other);
+            }
+        clusters.push(cluster);
+      }
+      const done = new Set();
+      for (const c of contents) {
+        if (done.has(c.id)) continue;
+        if (
+          c.type === 'group' &&
+          !paints.some(
+            (p) =>
+              !c.children.some(
+                (x) =>
+                  paint(x) &&
+                  x.type.toLowerCase().includes(p.type.toLowerCase().includes('stroke') ? 'stroke' : 'fill'),
+              ),
+          )
+        ) {
+          G.storeMatrix(c, matrix.clone().append(G.matrix(c)));
+          c.transform.opacity *= n.transform.opacity / 100;
+          c.visible = c.visible !== false && n.visible !== false;
+          if (
+            n.props['ADBE Vector Blend Mode'] > 1 &&
+            (!c.props['ADBE Vector Blend Mode'] || c.props['ADBE Vector Blend Mode'] === 1)
+          )
+            c.props['ADBE Vector Blend Mode'] = n.props['ADBE Vector Blend Mode'];
+          moved.push(c);
+          continue;
+        }
+        const cluster = D.isShape(c) ? clusters.find((xs) => xs.includes(c)) : [c];
+        cluster.forEach((x) => done.add(x.id));
+        const same =
+          simple &&
+          paints.every((p) =>
             samePaint(
               p,
               paintsFor(e.doc, parent)[p.type.toLowerCase().includes('stroke') ? 'stroke' : 'fill'],
             ),
           );
-          if (!same) {
-            parent.children.splice(index, 1, wrapper);
-            selection.push(...contents.map((x) => x.id));
-            return;
-          }
+        if (same) {
+          moved.push(...cluster);
+          continue;
         }
-        contents.forEach((c) => G.storeMatrix(c, G.matrix(n).append(G.matrix(c))));
-        parent.children.splice(index, 1, ...contents);
-        selection.push(...contents.map((x) => x.id));
-      } else {
-        const moved = [];
-        contents.forEach((c) => {
-          if (!['group', 'path', 'rect', 'ellipse', 'star'].includes(c.type)) return;
-          const wrapper = D.node('group', c.name);
-          G.storeMatrix(wrapper, G.matrix(n));
-          wrapper.transform.opacity = n.transform.opacity;
-          wrapper.children = [c, ...paints.map(D.fresh)];
-          moved.push(wrapper);
-        });
-        parent.children.splice(index, 1, ...moved);
-        selection.push(...moved.map((x) => x.id));
+        const wrapper = D.node('group', cluster.length > 1 ? 'Compound path' : c.name);
+        wrapper.children = [...cluster, ...paints.map(D.fresh)];
+        wrapper.transform = D.clone(n.transform);
+        wrapper.visible = n.visible;
+        wrapper.props = D.clone(n.props);
+        moved.push(wrapper);
       }
+      parent.children.splice(index, 1, ...moved);
+      selection.push(...moved.map((x) => x.id));
     });
     e.selection = selection;
   }

@@ -1,4 +1,4 @@
-# Implementation coverage — 0.9.0
+# Implementation coverage — 0.9.1
 
 Behavioral reference: [Design Mode documentation](https://docs.jakeinmotion.com/design-mode/), reviewed November 16, 2026. [The full directory](DOCUMENTATION-DIRECTORY.md) indexes all 22 product pages and 4 support pages.
 
@@ -36,11 +36,11 @@ The features below are implemented. Browser checks exercise the local editor; na
 - Push as new makes gradients solid at their first color. Unreadable, animated, or expression-driven native gradient colors remain guarded. Existing gradient readback depends on available saved AEP data; preset application and AE-version selection need real-host checks.
 - Move along path retains original Bezier knots as construction points and selects newly subdivided knots to preserve the contour. Disabling tangent alignment restores the original selected handle vectors.
 - Automatic-curve metadata for shape paths is stored in the layer comment; mask RotoBezier uses AE's native mask flag. Tangent edits convert automatic curves to Bezier.
-- Parented 2D shape appearance is baked into unparented new layers, including a Contents transform when shear is needed. Parented 3D transforms use a static decomposition; nonuniform 3D parent shear is reported as an approximation. Different destination cameras can change 3D appearance.
+- Parented 2D shape appearance is baked into unparented new layers, including a Contents transform when shear is needed. Parented 3D shape planes use a rotation/scale factorization plus a Contents shear, preserving the plane even with mirrored and nonuniform parents. Text under parent shear still requires outlines for exact transfer. Different destination cameras can change 3D appearance.
 - Source footage is not recreated by Push as new. Its masks can be edited through ordinary Push; unsupported new source transfer is reported.
 - Native gradients, source previews, text outlines, expressions/rigs, 3D coordinates and complex animated hierarchy changes require Mac/AE round-trip testing. A mock cannot establish that those AE APIs behave exactly as expected.
 - Changes made concurrently in AE are not comprehensively checked per property. Layer-stack changes are detected. Pull again after external edits.
 
 ## Validation
 
-60 automated tests pass: 21 model/native-contract tests and 39 browser tests. All frontend files pass ES2020 parsing; all host files pass ES3 parsing. See [VALIDATION.md](VALIDATION.md) and the [Mac acceptance checklist](MAC-AE-VALIDATION.md).
+70 automated tests pass: 26 model/native-contract tests and 44 browser tests. All frontend files pass ES2020 parsing; all host files pass ES3 parsing. See [VALIDATION.md](VALIDATION.md) and the [Mac acceptance checklist](MAC-AE-VALIDATION.md).

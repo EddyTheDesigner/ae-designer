@@ -381,29 +381,33 @@
     copy.layers.forEach((n, i) => {
       const original = doc.layers[i];
       if (asNew && (n.parentId || n.parentMatrix)) {
-        if (n.projection && window.Projection) {
-          const m = Projection.layerWorld(doc, original, false),
-            sx = Math.hypot(m[0], m[4], m[8]),
-            sy = Math.hypot(m[1], m[5], m[9]),
-            sz = Math.hypot(m[2], m[6], m[10]);
-          const shear = Math.abs((m[0] * m[1] + m[4] * m[5] + m[8] * m[9]) / Math.max(1e-9, sx * sy));
-          const a = n.transform.anchor || [0, 0, 0],
-            degrees = 180 / Math.PI;
-          n.transform.position = [
-            m[0] * a[0] + m[1] * a[1] + m[2] * (a[2] || 0) + m[3],
-            m[4] * a[0] + m[5] * a[1] + m[6] * (a[2] || 0) + m[7],
-            m[8] * a[0] + m[9] * a[1] + m[10] * (a[2] || 0) + m[11],
-          ];
-          n.transform.scale = [sx * 100, sy * 100, sz * 100];
-          n.transform.orientation = [0, 0, 0];
-          n.transform.yRotation = Math.asin(Math.max(-1, Math.min(1, -m[8] / (sx || 1)))) * degrees;
-          n.transform.xRotation = Math.atan2(m[9] / (sy || 1), m[10] / (sz || 1)) * degrees;
-          n.transform.rotation = Math.atan2(m[4] / (sx || 1), m[0] / (sx || 1)) * degrees;
-          n.threeD = true;
-          if (shear > 1e-5)
-            copy.transferWarnings.push(
-              n.name + ': nonuniform 3D parent scaling is approximated on the unparented new layer.',
-            );
+        if (
+          window.Projection &&
+          (n.projection || n.threeD || n.parentTransforms3D?.some((t) => t.position?.length === 3))
+        ) {
+          const baked = Projection.unparent(doc, original);
+          if (baked) {
+            n.transform = baked.transform;
+            n.threeD = true;
+            if (!baked.residual.isIdentity()) {
+              if (n.layerKind === 'shape') {
+                const group = D.node('group', 'Parent transform');
+                storeMatrix(group, baked.residual);
+                group.children = n.children.filter((x) => x.type !== 'mask');
+                n.children = n.children.filter((x) => x.type === 'mask');
+                n.children.forEach((mask) => {
+                  const p = pathOf(mask);
+                  p.transform(baked.residual);
+                  setPath(mask, p);
+                });
+                n.children.unshift(group);
+              } else
+                copy.transferWarnings.push(
+                  n.name + ': parent shear requires text outlines for an exact new-layer transfer.',
+                );
+            }
+          } else
+            copy.transferWarnings.push(n.name + ': a zero-scale parent prevents recovering its 3D plane.');
         } else storeMatrix(n, world(doc, original));
         delete n.parentId;
         delete n.parentMatrix;
@@ -411,8 +415,7 @@
         delete n.projection;
       }
       if (n.layerKind === 'shape' && Math.abs(n.transform.skew || 0) > 1e-8 && !n.threeD) {
-        const desired = matrix(n),
-          t = D.clone(n.transform);
+        const desired = matrix(n);
         delete n.transform.matrix;
         n.transform.skew = 0;
         const remaining = matrix(n).inverted().append(desired),

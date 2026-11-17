@@ -1,6 +1,6 @@
 {
   "name": "ae-designer",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "description": "Local vector design tools for Adobe After Effects",
   "scripts": {
