@@ -1,0 +1,21 @@
+{
+  "name": "ae-designer",
+  "version": "0.9.0",
+  "private": true,
+  "description": "Local vector design tools for Adobe After Effects",
+  "scripts": {
+    "test": "node --test tests/model.test.cjs tests/host.test.cjs",
+    "check": "node scripts/check.cjs",
+    "build": "node scripts/build.cjs",
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@zimoby/ae-native-gradient": "^0.2.0",
+    "acorn": "8.15.0",
+    "archiver": "7.0.1",
+    "buffer": "^6.0.3",
+    "esbuild": "^0.25.12",
+    "prettier": "^3.6.2"
+  }
+}

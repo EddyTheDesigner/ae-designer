@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.reference/
+test-results/
+playwright-report/
+*.p12
+*.pfx
+*.key
+*.pem
+.rnd
+.DS_Store

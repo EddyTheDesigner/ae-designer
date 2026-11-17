@@ -1,0 +1,342 @@
+{
+  "reviewed": "2026-11-16",
+  "designMode": [
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/",
+      "title": "Design Mode",
+      "sections": [
+        "What Design Mode does",
+        "Requirements"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/getting-started/installation/",
+      "title": "Installation",
+      "sections": [
+        "Get Design Mode",
+        "Install the extension",
+        "The three panels",
+        "Activate your license",
+        "Moving to a new machine",
+        "Working offline"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/getting-started/quick-start/",
+      "title": "Quick Start",
+      "sections": [
+        "1. Pull",
+        "2. Select",
+        "3. Edit",
+        "4. Push"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/working-in-design-mode/pull-and-push/",
+      "title": "Pull and Push",
+      "sections": [
+        "Pull",
+        "Push",
+        "Push as new",
+        "Keyframes and expressions",
+        "Recovering unpushed work"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/working-in-design-mode/the-workspace/",
+      "title": "The Workspace",
+      "sections": [
+        "Layout",
+        "Toolbar",
+        "Tools at a glance",
+        "Floating toolbar",
+        "Narrow panels",
+        "Moving around the canvas",
+        "Rulers and guides",
+        "Background and Outline view",
+        "Preferences",
+        "Menu and What’s New"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/working-in-design-mode/last-action/",
+      "title": "Last Action",
+      "sections": [
+        "Cards",
+        "Repeat",
+        "Edits with no card"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/selecting-and-arranging/selecting/",
+      "title": "Selecting",
+      "sections": [
+        "Selection tool (V)",
+        "Direct Selection (A)",
+        "Magic Wand (Y)",
+        "Lasso (Q)",
+        "Select all and deselect",
+        "Working inside a group",
+        "Locking",
+        "Finding the selection in Layers"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/selecting-and-arranging/layers/",
+      "title": "Layers",
+      "sections": [
+        "Rows",
+        "Search and filter",
+        "Reorder and move",
+        "Group and ungroup",
+        "Add to a layer",
+        "Right-click menu",
+        "Delete"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/drawing-and-editing/drawing/",
+      "title": "Drawing",
+      "sections": [
+        "Where new shapes land",
+        "Shape tools",
+        "Pen (P)",
+        "Pencil (N)",
+        "Text (T)"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/drawing-and-editing/editing-paths/",
+      "title": "Editing Paths",
+      "sections": [
+        "Vertex tools",
+        "Point and tangent values",
+        "Corners",
+        "Join, close and average",
+        "Path direction",
+        "RotoBezier",
+        "Width tool (Shift+W)"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/drawing-and-editing/transforming/",
+      "title": "Transforming",
+      "sections": [
+        "The transform box",
+        "Transform modes",
+        "The pivot",
+        "Transform tools",
+        "Scale tool options",
+        "Anchor tool",
+        "Keyboard transforms",
+        "Nudging",
+        "Snapping",
+        "Align and distribute",
+        "Duplicate, copy and paste"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/drawing-and-editing/path-actions/",
+      "title": "Path Actions",
+      "sections": [
+        "Path commands",
+        "Offset Path tool",
+        "Pathfinder",
+        "Replicate",
+        "Split and Consolidate",
+        "Right-click menu"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/properties/fill-and-stroke/",
+      "title": "Fill and Stroke",
+      "sections": [
+        "Fill & Stroke",
+        "One fill or stroke",
+        "Taper",
+        "Dashes",
+        "Wave",
+        "Blend modes",
+        "Colors",
+        "Eyedropper (I)"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/properties/gradients/",
+      "title": "Gradients",
+      "sections": [
+        "Add a gradient",
+        "Gradient settings",
+        "Stops",
+        "Gradient tool (G)",
+        "Limits"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/properties/shape-properties/",
+      "title": "Shape Properties",
+      "sections": [
+        "Layer",
+        "Group",
+        "Shapes",
+        "Operators",
+        "Animated and expression-driven values"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/properties/masks/",
+      "title": "Masks",
+      "sections": [
+        "Draw a mask",
+        "Mask settings",
+        "Mask color",
+        "Limits"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/properties/text/",
+      "title": "Text",
+      "sections": [
+        "Character",
+        "Paragraph",
+        "Moving and transforming text",
+        "Limits"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/reference/troubleshooting/",
+      "title": "Troubleshooting",
+      "sections": [
+        "Design Mode does not appear after installing",
+        "”This key is already in use on all the machines it allows”",
+        "”That key was not found”",
+        "”That key is for a different product”",
+        "”Your network is blocking the license server”",
+        "Design Mode could not reach the license server",
+        "”Design Mode could not find this machine’s activation”",
+        "”Design Mode could not read your license file”",
+        "”Activated, but the license could not be saved to disk”",
+        "”The license server answered with something Design Mode could not read”",
+        "License shows Grace period",
+        "License shows Expired or Disabled",
+        "Design Mode Layers or Properties says it is waiting",
+        "”Nothing in this comp can be pulled”",
+        "Push says it refused something",
+        "”The layer stack changed in After Effects”",
+        "Push is paused after restoring a draft",
+        "A shape cannot be selected",
+        "A value is red and will not change",
+        "A blend mode looks different from After Effects",
+        "A mask does not cut its shape layer on the canvas",
+        "I cannot type Japanese, Chinese or Korean text",
+        "”Design Mode lost its connection to After Effects”",
+        "The panel opens blank or stops responding",
+        "Still stuck?"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/reference/faq/",
+      "title": "FAQ",
+      "sections": [
+        "Does Design Mode change my project as I edit?",
+        "What can it edit?",
+        "Is it live with After Effects?",
+        "Does it keep my animation?",
+        "How much does it cost?",
+        "Where do I find my license key?",
+        "How many machines can I use it on?",
+        "How do I move my license to a new computer?",
+        "Does Design Mode need the internet?",
+        "What is in the footer menu?",
+        "How do I see what changed in a new version?",
+        "How do I update Design Mode?",
+        "Which version do I have?",
+        "What does it run in?",
+        "Where is my recovery draft stored?",
+        "Can I copy shapes from other apps into it?"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/reference/changelog/",
+      "title": "Changelog",
+      "sections": [
+        "v1.0.0"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/reference/keyboard-shortcuts/",
+      "title": "Keyboard Shortcuts",
+      "sections": [
+        "Change a shortcut",
+        "Presets",
+        "Always After Effects",
+        "Tools",
+        "Edit",
+        "View",
+        "Escape"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/design-mode/eula/",
+      "title": "End User License Agreement",
+      "sections": [
+        "Definitions",
+        "Acknowledgment",
+        "Requirements",
+        "License",
+        "Grant",
+        "Restrictions",
+        "Your Work",
+        "Activation",
+        "Intellectual Property",
+        "Third-Party Software",
+        "Purchases and Refunds",
+        "Privacy and Data",
+        "Feedback",
+        "Modifications",
+        "Updates",
+        "Support",
+        "Term and Termination",
+        "Indemnification",
+        "No Warranties",
+        "Limitation of Liability",
+        "Severability and Waiver",
+        "U.S. Legal Compliance",
+        "Changes to This Agreement",
+        "Governing Law",
+        "Entire Agreement",
+        "Contact"
+      ]
+    }
+  ],
+  "support": [
+    {
+      "url": "https://docs.jakeinmotion.com/support/contact/",
+      "title": "Contact Support",
+      "sections": []
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/support/licensing/",
+      "title": "Licensing",
+      "sections": [
+        "Free tools",
+        "Paid tools",
+        "Need help?"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/support/refunds/",
+      "title": "Refunds",
+      "sections": [
+        "Code Runner"
+      ]
+    },
+    {
+      "url": "https://docs.jakeinmotion.com/support/installing-zxp-extensions/",
+      "title": "Installing ZXP Extensions",
+      "sections": [
+        "Install a ZXP extension"
+      ]
+    }
+  ]
+}
